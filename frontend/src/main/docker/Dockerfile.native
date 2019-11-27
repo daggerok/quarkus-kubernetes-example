@@ -4,19 +4,16 @@
 # for id in $(docker ps -q) ; do http :$(docker inspect $id | jq '.[].NetworkSettings.Ports."8080/tcp"[].HostPort' -r) ; done
 # ./mvnw -Pfabric8-native docker:stop docker:remove
 ####
-FROM alpine
-LABEL MAINTAINER="Maksim Kostromin https://github.com/daggerok/"
-ENV JAVA_OPTS="-Dquarkus.http.host=0.0.0.0 -Djava.util.logging.manager=org.jboss.logmanager.LogManager"
-RUN apk --no-cache --update add busybox-suid sudo openssh-client shadow curl \
- && adduser -h /home/quarkus -s /bin/ash -D -u 1025 quarkus wheel \
+FROM centos:centos7.7.1908
+RUN yum install -y -q sudo java-1.8.0-openjdk \
+ && adduser --create-home --shell /bin/bash --uid 1001 quarkus \
  && echo "quarkus ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers \
  && sed -i "s/.*requiretty$/Defaults !requiretty/" /etc/sudoers \
- && apk del busybox-suid sudo openssh-client shadow \
  && rm -rf /var/cache/apk/* /tmp/*
 EXPOSE 8080
 USER quarkus
-CMD /bin/ash
+CMD /bin/bash
 VOLUME /home/quarkus
 WORKDIR /home/quarkus
-ENTRYPOINT ["ash", "-c", "chmod 775 /home/quarkus/app && /home/quarkus/app -Dquarkus.http.host=0.0.0.0"]
-COPY --chown=quarkus target/*-runner ./app
+ENTRYPOINT ["/bin/bash", "-c", "chmod +x ./application && ./application -Dquarkus.http.host=0.0.0.0"]
+COPY --chown=quarkus target/*-runner ./application
