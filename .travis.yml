@@ -67,6 +67,16 @@ jobs:
       name: native
       before_script:
         - cd $TRAVIS_BUILD_DIR && ./mvnw -Pnative -Dquarkus.native.container-build=true clean compile quarkus:build
+        - . ./frontend/target/*-runner &
+        - wait_for 8080
+      script:
+        - http :8080
+      after_script:
+        - stop_any 80 8080
+    - stage: test
+      name: native in docker
+      before_script:
+        - cd $TRAVIS_BUILD_DIR && ./mvnw -Pnative -Dquarkus.native.container-build=true clean compile quarkus:build
         - cd $TRAVIS_BUILD_DIR && ./mvnw -Pfabric8-native docker:build docker:start
       script:
         - for id in $(docker ps -q) ; do

@@ -4,7 +4,7 @@
 # for id in $(docker ps -q) ; do http :$(docker inspect $id | jq '.[].NetworkSettings.Ports."8080/tcp"[].HostPort' -r) ; done
 # ./mvnw -Pfabric8-native docker:stop docker:remove
 ####
-FROM openjdk:8u212-jre-alpine3.9
+FROM alpine
 LABEL MAINTAINER="Maksim Kostromin https://github.com/daggerok/"
 ENV JAVA_OPTS="-Dquarkus.http.host=0.0.0.0 -Djava.util.logging.manager=org.jboss.logmanager.LogManager"
 RUN apk --no-cache --update add busybox-suid sudo openssh-client shadow curl \
@@ -19,4 +19,4 @@ CMD /bin/ash
 VOLUME /home/quarkus
 WORKDIR /home/quarkus
 ENTRYPOINT ["ash", "-c", "chmod 775 /home/quarkus/app && /home/quarkus/app -Dquarkus.http.host=0.0.0.0"]
-COPY --chown=quarkus target/*-runner /home/quarkus/app
+COPY --chown=quarkus target/*-runner ./app

@@ -3,7 +3,6 @@
 # for id in $(docker ps -q) ; do http :$(docker inspect $id | jq '.[].NetworkSettings.Ports."8080/tcp"[].HostPort' -r) ; done
 # ./mvnw -Pfabric8-jvm docker:stop docker:remove
 ####
-
 FROM openjdk:8u212-jre-alpine3.9
 LABEL MAINTAINER="Maksim Kostromin https://github.com/daggerok/"
 ENV JAVA_OPTS="-Dquarkus.http.host=0.0.0.0 -Djava.util.logging.manager=org.jboss.logmanager.LogManager"
@@ -18,6 +17,6 @@ USER quarkus
 CMD /bin/ash
 VOLUME /home/quarkus
 WORKDIR /home/quarkus
-ENTRYPOINT java ${JAVA_OPTS} -jar /home/quarkus/app.jar
+ENTRYPOINT ["ash", "-c", "java ${JAVA_OPTS} -jar /home/quarkus/app.jar"]
 COPY --chown=quarkus target/lib/* /home/quarkus/lib/
 COPY --chown=quarkus target/*-runner.jar /home/quarkus/app.jar
