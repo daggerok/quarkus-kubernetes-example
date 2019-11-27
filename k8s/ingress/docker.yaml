@@ -1,0 +1,24 @@
+---
+# ./mvnw -Pfabric8-jvm clean compile quarkus:build docker:build docker:push
+# kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/static/mandatory.yaml ; kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/static/provider/cloud-generic.yaml ; kubectl get pods --all-namespaces --watch -o wide & ; kubectl apply -f k8s/ ; kubectl apply -f k8s/ingress/docker.yaml
+# ...
+# kubectl delete -f k8s/ ; kubectl delete -f k8s/ingress/docker.yaml ; kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/static/mandatory.yaml ; kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/static/provider/cloud-generic.yaml ; docker rm -f -v `docker ps -q` ; rm -rf ~/.config/k3d/k3s
+---
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: docker-k8s-ingress
+#  annotations:
+#    nginx.ingress.kubernetes.io/rewrite-target: /$2
+spec:
+  backend:
+    serviceName: frontend
+    servicePort: 8080
+#  rules:
+#    - http:
+#        paths:
+#          - path: /other(/|$)(.*)
+#            backend:
+#              serviceName: other-service
+#              servicePort: 8080
+---

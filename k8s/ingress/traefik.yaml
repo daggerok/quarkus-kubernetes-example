@@ -1,0 +1,26 @@
+---
+# ./mvnw -P
+# k3d create --name k3s --api-port 6551 --publish 80:80 --publish 8080:8080 --workers 1 ; sleep 5s ; export KUBECONFIG="$(k3d get-kubeconfig --name='k3s')" ; kubectl get pods --all-namespaces -o wide -w & ; kubectl apply -f k8s/ ; kubectl apply -f k8s/ingress/traefik.yaml
+# ...
+# kubectl delete -f k8s/ ; kubectl delete -f k8s/ingress/traefik.yaml ; k3d stop --name=k3s -a ; docker rm -f -v `docker ps -aq` ; rm -rf ~/.config/k3d/k3s
+---
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: traefik-k8s-ingress
+  annotations:
+    traefik.frontend.rule.type: PathPrefixStrip
+spec:
+  backend:
+    serviceName: frontend
+    servicePort: 8080
+    #servicePort: "webflux"
+  rules:
+    - http:
+        paths:
+          - path: /other
+            backend:
+              serviceName: other-service
+              servicePort: 8080
+              #servicePort: "webflux"
+---

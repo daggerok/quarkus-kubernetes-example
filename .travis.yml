@@ -1,0 +1,98 @@
+notifications:
+  email: false
+git:
+  quiet: true
+  depth: false
+jdk: openjdk8
+node_js: lts/*
+python: 3.7
+services: docker
+addons:
+  apt:
+    update: true
+    packages:
+      - python3-pip
+      - sudo
+      - lsof
+      - curl
+      - jq
+install: true
+before_install:
+  - |
+    if [ ! -f ${HOME}/.local/daggerok/bash-functions/master/main.bash ] ; then
+      mkdir -p ${HOME}/.local/daggerok/bash-functions/master ;
+      curl -s https://raw.githubusercontent.com/daggerok/bash-functions/master/main.bash > ${HOME}/.local/daggerok/bash-functions/master/main.bash ;
+    fi
+    source ${HOME}/.local/daggerok/bash-functions/master/main.bash ;
+  - stop_any 80 5432 8080
+  - export PATH=$HOME/.local/bin:$PATH
+  - pip3 install --user --upgrade pip setuptools
+  - pip install --user --upgrade httpie
+jobs:
+  include:
+    - stage: test
+      name: k8s ingress using k3d k3s traefik
+      script:
+        - cd $TRAVIS_BUILD_DIR
+        #- wget -q -O - https://raw.githubusercontent.com/rancher/k3d/master/install.sh | bash
+        - curl -s https://raw.githubusercontent.com/rancher/k3d/master/install.sh | bash
+        - k3d create --name k3s --api-port 6551 --publish 80:80 --publish 8080:8080 --publish 30080:30080 --workers 1
+        - sleep 24s
+        #
+        - export KUBECONFIG="$(k3d get-kubeconfig --name='k3s')"
+        - |
+          if [ ! -f ${HOME}/.local/bin/kubectl ] ; then
+            mkdir -p ${HOME}/.local/bin/ ;
+            curl -LO https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kubectl ;
+            chmod +x ./kubectl ;
+            mv ./kubectl ~/.local/bin/ ;
+          fi
+        - kubectl get pods --all-namespaces -o wide --watch &
+        #
+        - kubectl apply -f k8s/ -f k8s/ingress/traefik.yaml
+        - sleep 124s
+        - kubectl get all -o wide
+        - sleep 24s
+        #
+        - kubectl get all
+        - http :/
+        - http :30080/
+        #
+        - kubectl delete -f k8s/ -f k8s/ingress/  || echo 'cannot kubectl...'
+        - k3d stop --name=k3s -a                  || echo 'cannot k3d...'
+        - docker rm -f -v `docker ps -q`          || echo 'cannot docker...'
+        - cat ~/.config/k3d/k3s/kubeconfig.yaml   || echo 'cannot cat...'
+        - rm -rf ~/.config/k3d/k3s
+    - stage: test
+      name: native
+      before_script:
+        - cd $TRAVIS_BUILD_DIR && ./mvnw -Pnative -Dquarkus.native.container-build=true clean compile quarkus:build
+        - cd $TRAVIS_BUILD_DIR && ./mvnw -Pfabric8-native docker:build docker:start
+      script:
+        - for id in $(docker ps -q) ; do
+            http :$(docker inspect $id | jq '.[].NetworkSettings.Ports."8080/tcp"[].HostPort' -r) ;
+          done
+      after_script:
+        - cd $TRAVIS_BUILD_DIR && ./mvnw -Pfabric8-native docker:stop docker:remove
+    - stage: test
+      name: jvm
+      before_script: cd $TRAVIS_BUILD_DIR && ./mvnw -Pfabric8-jvm clean compile quarkus:build docker:build docker:start
+      script: for id in $(docker ps -q) ; do http :$(docker inspect $id | jq '.[].NetworkSettings.Ports."8080/tcp"[].HostPort' -r) ; done
+      after_script: cd $TRAVIS_BUILD_DIR && ./mvnw -Pfabric8-jvm docker:stop docker:remove
+    - stage: test
+      name: frontend jar
+      before_script:
+        - cd $TRAVIS_BUILD_DIR && ./mvnw compile quarkus:build -f frontend
+        - java -jar $TRAVIS_BUILD_DIR/frontend/target/*-runner.jar &
+        - wait_for 8080
+      script:
+        - http :8080
+      after_script:
+        - stop_any 80 8080
+cache:
+  pip: true
+  packages: true
+  directories:
+    - ~/.m2
+    - ~/.docker
+    - ~/.local/daggerok
