@@ -8,17 +8,17 @@ apiVersion: networking.k8s.io/v1beta1
 kind: Ingress
 metadata:
   name: docker-k8s-ingress
-#  annotations:
-#    nginx.ingress.kubernetes.io/rewrite-target: /$2
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
 spec:
   backend:
     serviceName: frontend
     servicePort: 8080
-#  rules:
-#    - http:
-#        paths:
-#          - path: /other(/|$)(.*)
-#            backend:
-#              serviceName: other-service
-#              servicePort: 8080
+  rules:
+    - http:
+        paths:
+          - path: /backend(/|$)(.*)
+            backend:
+              serviceName: backend
+              servicePort: 8081
 ---

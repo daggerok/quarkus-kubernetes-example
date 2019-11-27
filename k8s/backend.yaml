@@ -2,56 +2,53 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: frontend
+  name: backend
   labels:
-    app: frontend
+    app: backend
 spec:
   replicas: 2
   template:
     metadata:
-      name: frontend
+      name: backend
       labels:
-        app: frontend
+        app: backend
     spec:
       containers:
-        - name: frontend
-          image: daggerok/quarkus-kubernetes-example-frontend
+        - name: backend
+          image: daggerok/quarkus-kubernetes-example-backend
           imagePullPolicy: IfNotPresent
           ports:
-            - containerPort: 8080
+            - containerPort: 8081
               protocol: TCP
               name: "http"
           readinessProbe:
             httpGet:
               scheme: HTTP
-              port: 8080
+              port: 8081
               path: /
           livenessProbe:
             httpGet:
               scheme: HTTP
-              port: 8080
+              port: 8081
               path: /
-          env:
-            - name: BACKEND_HOST
-              value: "backend"
       restartPolicy: Always
   selector:
     matchLabels:
-      app: frontend
+      app: backend
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: frontend
+  name: backend
 spec:
   selector:
-    app: frontend
+    app: backend
   sessionAffinity: None
   ports:
-    - port: 8080
+    - port: 8081
       protocol: TCP
       name: "http"
-      targetPort: 8080
-      nodePort: 30080
+      targetPort: 8081
+      nodePort: 30081
   type: NodePort
 ---

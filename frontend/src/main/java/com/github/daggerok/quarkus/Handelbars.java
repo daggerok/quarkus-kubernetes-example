@@ -12,9 +12,7 @@ import javax.inject.Singleton;
 import java.util.Objects;
 
 import static io.vertx.core.http.HttpHeaders.CONTENT_TYPE;
-import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
-import static javax.ws.rs.core.MediaType.TEXT_HTML;
-import static javax.ws.rs.core.Response.Status.BAD_REQUEST;
+import static io.vertx.core.http.HttpHeaders.TEXT_HTML;
 
 @Singleton
 public class Handelbars {
@@ -47,8 +45,8 @@ public class Handelbars {
         engine.render(context, String.format("templates/%s", template), event -> {
             if (event.failed()) {
                 rc.response()
-                  .putHeader(CONTENT_TYPE, APPLICATION_JSON)
-                  .setStatusCode(BAD_REQUEST.getStatusCode())
+                  .putHeader(CONTENT_TYPE, "application/json")
+                  .setStatusCode(400)
                   .end(event.cause().getLocalizedMessage());
                 return;
             }

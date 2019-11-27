@@ -36,7 +36,7 @@ jobs:
         - cd $TRAVIS_BUILD_DIR
         #- wget -q -O - https://raw.githubusercontent.com/rancher/k3d/master/install.sh | bash
         - curl -s https://raw.githubusercontent.com/rancher/k3d/master/install.sh | bash
-        - k3d create --name k3s --api-port 6551 --publish 80:80 --publish 8080:8080 --publish 30080:30080 --workers 1
+        - k3d create --name k3s --api-port 6551 --publish 80:80 --publish 30080:30080 --publish 30081:30081 --workers 1
         - sleep 24s
         #
         - export KUBECONFIG="$(k3d get-kubeconfig --name='k3s')"
@@ -61,7 +61,9 @@ jobs:
         #
         - kubectl get all
         - http :/
+        - http :/backend/
         - http :30080/
+        - http :30081/
         #
         - kubectl delete -f k8s/ -f k8s/ingress/  || echo 'cannot kubectl...'
         - k3d stop --name=k3s -a                  || echo 'cannot k3d...'
@@ -72,28 +74,41 @@ jobs:
       name: native
       before_script:
         - cd $TRAVIS_BUILD_DIR && ./mvnw -Pnative -Dquarkus.native.container-build=true clean compile quarkus:build
+        - cd $TRAVIS_BUILD_DIR && docker network create quarkus-kubernetes-example
         - cd $TRAVIS_BUILD_DIR && ./mvnw -Pfabric8-native docker:build docker:start
       script:
-        - for id in $(docker ps -q) ; do
-            http :$(docker inspect $id | jq '.[].NetworkSettings.Ports."8080/tcp"[].HostPort' -r) ;
-          done
+        - http :8081
+        - http :8080
+      #script:
+      #  - for id in $(docker ps -q) ; do
+      #      http :$(docker inspect $id | jq '.[].NetworkSettings.Ports."8080/tcp"[].HostPort' -r) ;
+      #    done
       after_script:
         - cd $TRAVIS_BUILD_DIR && ./mvnw -Pfabric8-native docker:stop docker:remove
+        - cd $TRAVIS_BUILD_DIR && docker network rm quarkus-kubernetes-example
     - stage: test
       name: jvm
-      before_script: cd $TRAVIS_BUILD_DIR && ./mvnw -Pfabric8-jvm clean compile quarkus:build docker:build docker:start
-      script: for id in $(docker ps -q) ; do http :$(docker inspect $id | jq '.[].NetworkSettings.Ports."8080/tcp"[].HostPort' -r) ; done
-      after_script: cd $TRAVIS_BUILD_DIR && ./mvnw -Pfabric8-jvm docker:stop docker:remove
+      before_script:
+        - cd $TRAVIS_BUILD_DIR && docker network create quarkus-kubernetes-example
+        - cd $TRAVIS_BUILD_DIR && ./mvnw -Pfabric8-jvm clean compile quarkus:build docker:build docker:start
+      #script: for id in $(docker ps -q) ; do http :$(docker inspect $id | jq '.[].NetworkSettings.Ports."8080/tcp"[].HostPort' -r) ; done
+      script:
+        - http :8081
+        - http :8080
+      after_script:
+        - cd $TRAVIS_BUILD_DIR && ./mvnw -Pfabric8-jvm docker:stop docker:remove
+        - cd $TRAVIS_BUILD_DIR && docker network rm quarkus-kubernetes-example
     - stage: test
       name: frontend jar
       before_script:
-        - cd $TRAVIS_BUILD_DIR && ./mvnw compile quarkus:build -f frontend
+        - cd $TRAVIS_BUILD_DIR && ./mvnw clean compile test quarkus:build
+        - java -jar $TRAVIS_BUILD_DIR/backend/target/*-runner.jar &
         - java -jar $TRAVIS_BUILD_DIR/frontend/target/*-runner.jar &
-        - wait_for 8080
+        - wait_for 8081 8080
       script:
+        - http :8081
         - http :8080
-      after_script:
-        - stop_any 80 8080
+      after_script: stop_any 80 8080
 cache:
   pip: true
   packages: true

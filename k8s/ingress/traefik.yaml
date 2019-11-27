@@ -14,13 +14,13 @@ spec:
   backend:
     serviceName: frontend
     servicePort: 8080
-    #servicePort: "webflux"
+    #servicePort: "http"
   rules:
     - http:
         paths:
-          - path: /other
+          - path: /backend
             backend:
-              serviceName: other-service
-              servicePort: 8080
-              #servicePort: "webflux"
+              serviceName: backend
+              servicePort: 8081
+              #servicePort: "http"
 ---

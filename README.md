@@ -1,23 +1,95 @@
 # quarkus k8s reactive vertx handlebars [![Build Status](https://travis-ci.org/daggerok/quarkus-kubernetes-example.svg?branch=master)](https://travis-ci.org/daggerok/quarkus-kubernetes-example)
 Quarkus k8s
 
-## jvm
+## docker (fabric8)
+
+requires: `docker network create quarkus-kubernetes-example || echo oops`
+
+### jvm
 
 ```bash
 ./mvnw -Pfabric8-jvm clean compile quarkus:build docker:build docker:start
 #for id in $(docker ps -q) ; do docker inspect $id | jq '.[].NetworkSettings.Ports."8080/tcp"[].HostPort' -r ; done
-for id in $(docker ps -q) ; do http :$(docker inspect $id | jq '.[].NetworkSettings.Ports."8080/tcp"[].HostPort' -r) ; done
+#for id in $(docker ps -q) ; do http :$(docker inspect $id | jq '.[].NetworkSettings.Ports."8080/tcp"[].HostPort' -r) ; done
+http :8080
+http :8081
 ./mvnw -Pfabric8-jvm docker:stop docker:remove
 ```
 
-## native
+### native
 
 ```bash
 ./mvnw -Pnative -Dquarkus.native.container-build=true clean compile quarkus:build
 ./mvnw -Pfabric8-native docker:build docker:start
 #for id in $(docker ps -q) ; do docker inspect $id | jq '.[].NetworkSettings.Ports."8080/tcp"[].HostPort' -r ; done
-for id in $(docker ps -q) ; do http :$(docker inspect $id | jq '.[].NetworkSettings.Ports."8080/tcp"[].HostPort' -r) ; done
+#for id in $(docker ps -q) ; do http :$(docker inspect $id | jq '.[].NetworkSettings.Ports."8080/tcp"[].HostPort' -r) ; done
+http :8080
+http :8081
 ./mvnw -Pfabric8-native docker:stop docker:remove
+```
+
+## k8s
+
+### jvm k8s in docker for mac / windows
+
+```bash
+./mvnw -Pfabric8-jvm clean compile quarkus:build docker:build docker:push
+kubectl get pods -o wide -w &
+kubectl apply -f k8s/ -f k8s/ingress/docker.yaml -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/static/mandatory.yaml -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/static/provider/cloud-generic.yaml
+# wait for bootstrap...
+http :/
+http :/backend
+http :30080/
+http :30081/
+kubectl delete -f k8s/ -f k8s/ingress/docker.yaml -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/static/mandatory.yaml -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/static/provider/cloud-generic.yaml
+```
+
+### jvm k8s in k3s in k3d
+
+```bash
+./mvnw -Pfabric8-jvm clean compile quarkus:build docker:build docker:push
+k3d create --name k3s --api-port 6551 --publish 80:80 --publish 30080:30080 --publish 30081:30081 --workers 2
+sleep 10s ; export KUBECONFIG="$(k3d get-kubeconfig --name='k3s')" ; kubectl get pods -o wide -w &
+kubectl apply -f k8s/ -f k8s/ingress/traefik.yaml
+# wait for bootstrap...
+http :/
+http :/backend
+http :30080/
+http :30081/
+kubectl delete -f k8s/ -f k8s/ingress/traefik.yaml
+k3d stop --name=k3s -a ; rm -rf ~/.config/k3d/k3s
+```
+
+### native k8s in docker for mac / windows
+
+```bash
+./mvnw -Pnative -Dquarkus.native.container-build=true clean compile quarkus:build
+./mvnw -Pfabric8-native docker:build docker:push
+kubectl get pods -o wide -w &
+kubectl apply -f k8s/ -f k8s/ingress/docker.yaml -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/static/mandatory.yaml -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/static/provider/cloud-generic.yaml
+# wait for bootstrap...
+http :/
+http :/backend
+http :30080/
+http :30081/
+kubectl delete -f k8s/ -f k8s/ingress/docker.yaml -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/static/mandatory.yaml -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/static/provider/cloud-generic.yaml
+```
+
+### native k8s in k3s in k3d
+
+```bash
+./mvnw -Pnative -Dquarkus.native.container-build=true clean compile quarkus:build
+./mvnw -Pfabric8-native docker:build docker:push
+k3d create --name k3s --api-port 6551 --publish 80:80 --publish 30080:30080 --publish 30081:30081 --workers 2
+sleep 10s ; export KUBECONFIG="$(k3d get-kubeconfig --name='k3s')" ; kubectl get pods -o wide -w &
+kubectl apply -f k8s/ -f k8s/ingress/traefik.yaml
+# wait for bootstrap...
+http :/
+http :/backend
+http :30080/
+http :30081/
+kubectl delete -f k8s/ -f k8s/ingress/traefik.yaml
+k3d stop --name=k3s -a ; rm -rf ~/.config/k3d/k3s ; docker rm -fv `docker ps -aq`
 ```
 
 ## features
@@ -26,6 +98,8 @@ for id in $(docker ps -q) ; do http :$(docker inspect $id | jq '.[].NetworkSetti
 * global headers
 * mustache reactive vertx handlebars templating
 * build and push docker images by using fabric8 docker-maven-plugin
+* correct docker container CMD and ENTRYPOINT usage
+* application is running in docker with qaurkus user
 
 ## resources
 
@@ -35,3 +109,5 @@ for id in $(docker ps -q) ; do http :$(docker inspect $id | jq '.[].NetworkSetti
 * https://vertx.io/docs/vertx-web/java/#_capturing_path_parameters
 * https://dmp.fabric8.io/#start-wait
 * https://dmp.fabric8.io/#start-volumes
+* https://habr.com/ru/company/southbridge/blog/329138/
+* [Spring Boot -> Quarkus](https://dzone.com/articles/spring2quarkus-spring-boot-to-quarkus-migration)

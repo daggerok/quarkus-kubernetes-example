@@ -6,17 +6,27 @@
 FROM openjdk:8u212-jre-alpine3.9
 LABEL MAINTAINER="Maksim Kostromin https://github.com/daggerok/"
 ENV JAVA_OPTS="-Dquarkus.http.host=0.0.0.0 -Djava.util.logging.manager=org.jboss.logmanager.LogManager"
-RUN apk --no-cache --update add busybox-suid sudo openssh-client shadow curl \
- && adduser -h /home/quarkus -s /bin/ash -D -u 1025 quarkus wheel \
- && echo "quarkus ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers \
- && sed -i "s/.*requiretty$/Defaults !requiretty/" /etc/sudoers \
- && apk del busybox-suid sudo openssh-client shadow \
+#RUN apk --no-cache --update add busybox-suid openssh-client shadow sudo curl \
+# && adduser -h /home/quarkus -s /bin/ash -D -u 1001 quarkus wheel \
+# && echo "quarkus ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers \
+# && sed -i "s/.*requiretty$/Defaults !requiretty/" /etc/sudoers \
+# && apk del busybox-suid openssh-client shadow \
+# && rm -rf /var/cache/apk/* /tmp/*
+#EXPOSE 8080
+#USER quarkus
+#VOLUME /home/quarkus
+#WORKDIR /home/quarkus
+#ENTRYPOINT ["/bin/ash", "-c"]
+#CMD ["sudo java ${JAVA_OPTS} \
+#        -jar /home/quarkus/*.jar"]
+#COPY --chown=quarkus target/lib/* /home/quarkus/lib/
+#COPY --chown=quarkus target/*-runner.jar /home/quarkus/app.jar
+RUN apk --no-cache --update add curl \
  && rm -rf /var/cache/apk/* /tmp/*
 EXPOSE 8080
-USER quarkus
-CMD /bin/ash
-VOLUME /home/quarkus
-WORKDIR /home/quarkus
-ENTRYPOINT ["ash", "-c", "java ${JAVA_OPTS} -jar /home/quarkus/app.jar"]
-COPY --chown=quarkus target/lib/* /home/quarkus/lib/
-COPY --chown=quarkus target/*-runner.jar /home/quarkus/app.jar
+WORKDIR /tmp
+ENTRYPOINT ["/bin/ash", "-c"]
+CMD [" java ${JAVA_OPTS} -jar ./*.jar \
+"]
+COPY target/lib/* ./lib/
+COPY target/*-runner.jar ./app.jar
