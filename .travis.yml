@@ -95,4 +95,5 @@ cache:
   directories:
     - ~/.m2
     - ~/.docker
+    - ~/.local/bin
     - ~/.local/daggerok
