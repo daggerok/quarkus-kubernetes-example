@@ -1,4 +1,4 @@
-# quarkus k8s reactive vertx [![Build Status](https://travis-ci.org/daggerok/quarkus-kubernetes-example.svg?branch=master)](https://travis-ci.org/daggerok/quarkus-kubernetes-example)
+# quarkus k8s reactive vertx handlebars [![Build Status](https://travis-ci.org/daggerok/quarkus-kubernetes-example.svg?branch=master)](https://travis-ci.org/daggerok/quarkus-kubernetes-example)
 Quarkus k8s
 
 ## jvm
@@ -29,7 +29,7 @@ for id in $(docker ps -q) ; do http :$(docker inspect $id | jq '.[].NetworkSetti
 
 ## resources
 
-* [vertx-web-examples](https://github.com/vert-x3/vertx-examples/tree/master/web-examples)
+* [vertx web examples](https://github.com/vert-x3/vertx-examples/tree/master/web-examples)
 * [vertx templates](https://vertx.io/docs/vertx-web/java/#_templates)
 * [vertx web](https://vertx.io/docs/vertx-web/java/)
 * https://vertx.io/docs/vertx-web/java/#_capturing_path_parameters
