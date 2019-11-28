@@ -3,7 +3,7 @@
 # for id in $(docker ps -q) ; do http :$(docker inspect $id | jq '.[].NetworkSettings.Ports."8080/tcp"[].HostPort' -r) ; done
 # ./mvnw -Pfabric8-jvm docker:stop docker:remove
 ####
-FROM openjdk:8u232-jre-slim-buster
+FROM openjdk:11.0.5-jre-slim-buster
 LABEL MAINTAINER="Maksim Kostromin https://github.com/daggerok/"
 ENV JAVA_OPTS="-Dquarkus.http.host=0.0.0.0 -Djava.util.logging.manager=org.jboss.logmanager.LogManager"
 USER root

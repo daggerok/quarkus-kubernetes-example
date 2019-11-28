@@ -31,13 +31,18 @@ before_install:
 jobs:
   include:
     - stage: test
-      name: k8s ingress using k3d k3s traefik
+      name: native k8s ingress using k3d k3s traefik
       script:
         - cd $TRAVIS_BUILD_DIR
         #- wget -q -O - https://raw.githubusercontent.com/rancher/k3d/master/install.sh | bash
         - curl -s https://raw.githubusercontent.com/rancher/k3d/master/install.sh | bash
-        - k3d create --name k3s --api-port 6551 --publish 80:80 --publish 30080:30080 --publish 30081:30081 --workers 1
-        - sleep 24s
+        - k3d create --name k3s --api-port 6551 --publish 80:80 --publish 30080:30080 --publish 30081:30081 -w 2 --image rancher/k3s:v0.7.0-rc2
+        #
+        - cd $TRAVIS_BUILD_DIR && ./mvnw -Pnative -Dquarkus.native.container-build=true clean compile quarkus:build
+        - cd $TRAVIS_BUILD_DIR && ./mvnw -Pfabric8-native docker:stop docker:remove
+        - cd $TRAVIS_BUILD_DIR && ./mvnw -Pfabric8-jvm docker:stop docker:remove
+        - cd $TRAVIS_BUILD_DIR && ./mvnw -Pfabric8-native docker:build
+        - k3d i --name k3s daggerok/quarkus-kubernetes-example-frontend,daggerok/quarkus-kubernetes-example-backend
         #
         - export KUBECONFIG="$(k3d get-kubeconfig --name='k3s')"
         - |
@@ -54,10 +59,8 @@ jobs:
           fi
         - kubectl get pods --all-namespaces -o wide --watch &
         #
-        - kubectl apply -f k8s/ -f k8s/ingress/traefik.yaml
-        - sleep 124s
-        - kubectl get all -o wide
-        - sleep 24s
+        - cd $TRAVIS_BUILD_DIR && kubectl apply -f k8s/ -f k8s/ingress/traefik.yaml
+        - sleep 75s
         #
         - kubectl get all
         - http :/
@@ -65,50 +68,92 @@ jobs:
         - http :30080/
         - http :30081/
         #
-        - kubectl delete -f k8s/ -f k8s/ingress/  || echo 'cannot kubectl...'
-        - k3d stop --name=k3s -a                  || echo 'cannot k3d...'
-        - docker rm -f -v `docker ps -q`          || echo 'cannot docker...'
-        - cat ~/.config/k3d/k3s/kubeconfig.yaml   || echo 'cannot cat...'
+        - cd $TRAVIS_BUILD_DIR && kubectl delete -f k8s/ -f k8s/ingress/  || echo 'cannot kubectl...'
+        - k3d stop --name=k3s -a                                          || echo 'cannot k3d...'
+        - docker rm -f -v `docker ps -q`                                  || echo 'cannot docker...'
+        - cat ~/.config/k3d/k3s/kubeconfig.yaml                           || echo 'cannot cat...'
         - rm -rf ~/.config/k3d/k3s
     - stage: test
-      name: native
-      before_script:
-        - cd $TRAVIS_BUILD_DIR && ./mvnw -Pnative -Dquarkus.native.container-build=true clean compile quarkus:build
-        - cd $TRAVIS_BUILD_DIR && docker network create quarkus-kubernetes-example
-        - cd $TRAVIS_BUILD_DIR && ./mvnw -Pfabric8-native docker:build docker:start
+      name: jvm k8s ingress using k3d k3s traefik
       script:
-        - http :8081
-        - http :8080
-      #script:
-      #  - for id in $(docker ps -q) ; do
-      #      http :$(docker inspect $id | jq '.[].NetworkSettings.Ports."8080/tcp"[].HostPort' -r) ;
-      #    done
-      after_script:
-        - cd $TRAVIS_BUILD_DIR && ./mvnw -Pfabric8-native docker:stop docker:remove
-        - cd $TRAVIS_BUILD_DIR && docker network rm quarkus-kubernetes-example
-    - stage: test
-      name: jvm
-      before_script:
-        - cd $TRAVIS_BUILD_DIR && docker network create quarkus-kubernetes-example
-        - cd $TRAVIS_BUILD_DIR && ./mvnw -Pfabric8-jvm clean compile quarkus:build docker:build docker:start
-      #script: for id in $(docker ps -q) ; do http :$(docker inspect $id | jq '.[].NetworkSettings.Ports."8080/tcp"[].HostPort' -r) ; done
-      script:
-        - http :8081
-        - http :8080
-      after_script:
+        - cd $TRAVIS_BUILD_DIR
+        #- wget -q -O - https://raw.githubusercontent.com/rancher/k3d/master/install.sh | bash
+        - curl -s https://raw.githubusercontent.com/rancher/k3d/master/install.sh | bash
+        - k3d create --name k3s --api-port 6551 --publish 80:80 --publish 30080:30080 --publish 30081:30081 --workers 3 2 --image rancher/k3s:v0.7.0-rc2
+        #
         - cd $TRAVIS_BUILD_DIR && ./mvnw -Pfabric8-jvm docker:stop docker:remove
-        - cd $TRAVIS_BUILD_DIR && docker network rm quarkus-kubernetes-example
-    - stage: test
-      name: frontend jar
-      before_script:
-        - cd $TRAVIS_BUILD_DIR && ./mvnw clean compile test quarkus:build
-        - java -jar $TRAVIS_BUILD_DIR/backend/target/*-runner.jar &
-        - java -jar $TRAVIS_BUILD_DIR/frontend/target/*-runner.jar &
-        - wait_for 8081 8080
-      script:
-        - http :8081
-        - http :8080
-      after_script: stop_any 80 8080
+        - cd $TRAVIS_BUILD_DIR && ./mvnw -Pfabric8-native docker:stop docker:remove
+        - cd $TRAVIS_BUILD_DIR && ./mvnw -Pfabric8-jvm clean compile quarkus:build docker:build
+        - k3d import-images --name k3s daggerok/quarkus-kubernetes-example-frontend,daggerok/quarkus-kubernetes-example-backend
+        #
+        - export KUBECONFIG="$(k3d get-kubeconfig --name='k3s')"
+        - |
+          if [ ! -f ${HOME}/.local/daggerok/kubectl ] ; then
+            curl -LO https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kubectl ;
+            mkdir -p ${HOME}/.local/daggerok/ ;
+            mv ./kubectl ~/.local/daggerok/ ;
+          fi
+        - |
+          if [ ! -f ${HOME}/.local/bin/kubectl ] ; then
+            mkdir -p ${HOME}/.local/bin/ ;
+            cp -Rf ${HOME}/.local/daggerok/kubectl ${HOME}/.local/bin/ ;
+            chmod +x ${HOME}/.local/bin/kubectl ;
+          fi
+        - kubectl get pods --all-namespaces -o wide --watch &
+        #
+        - cd $TRAVIS_BUILD_DIR && kubectl apply -f k8s/ -f k8s/ingress/traefik.yaml
+        - sleep 84s
+        #
+        - kubectl get all
+        - http :/
+        - http :/backend/
+        - http :30080/
+        - http :30081/
+        #
+        - cd $TRAVIS_BUILD_DIR && kubectl delete -f k8s/ -f k8s/ingress/  || echo 'cannot kubectl...'
+        - k3d stop --name=k3s -a                                          || echo 'cannot k3d...'
+        - docker rm -f -v `docker ps -q`                                  || echo 'cannot docker...'
+        - cat ~/.config/k3d/k3s/kubeconfig.yaml                           || echo 'cannot cat...'
+        - rm -rf ~/.config/k3d/k3s
+#    - stage: test
+#      name: native
+#      before_script:
+#        - cd $TRAVIS_BUILD_DIR && ./mvnw -Pnative -Dquarkus.native.container-build=true clean compile quarkus:build
+#        - cd $TRAVIS_BUILD_DIR && docker network create quarkus-kubernetes-example
+#        - cd $TRAVIS_BUILD_DIR && ./mvnw -Pfabric8-native docker:build docker:start
+#      script:
+#        - http :8081
+#        - http :8080
+#      #script:
+#      #  - for id in $(docker ps -q) ; do
+#      #      http :$(docker inspect $id | jq '.[].NetworkSettings.Ports."8080/tcp"[].HostPort' -r) ;
+#      #    done
+#      after_script:
+#        - cd $TRAVIS_BUILD_DIR && ./mvnw -Pfabric8-native docker:stop docker:remove
+#        - cd $TRAVIS_BUILD_DIR && docker network rm quarkus-kubernetes-example
+#    - stage: test
+#      name: jvm
+#      before_script:
+#        - cd $TRAVIS_BUILD_DIR && docker network create quarkus-kubernetes-example
+#        - cd $TRAVIS_BUILD_DIR && ./mvnw -Pfabric8-jvm clean compile quarkus:build docker:build docker:start
+#      #script: for id in $(docker ps -q) ; do http :$(docker inspect $id | jq '.[].NetworkSettings.Ports."8080/tcp"[].HostPort' -r) ; done
+#      script:
+#        - http :8081
+#        - http :8080
+#      after_script:
+#        - cd $TRAVIS_BUILD_DIR && ./mvnw -Pfabric8-jvm docker:stop docker:remove
+#        - cd $TRAVIS_BUILD_DIR && docker network rm quarkus-kubernetes-example
+#    - stage: test
+#      name: frontend jar
+#      before_script:
+#        - cd $TRAVIS_BUILD_DIR && ./mvnw clean compile test quarkus:build
+#        - java -jar $TRAVIS_BUILD_DIR/backend/target/*-runner.jar &
+#        - java -jar $TRAVIS_BUILD_DIR/frontend/target/*-runner.jar &
+#        - wait_for 8081 8080
+#      script:
+#        - http :8081
+#        - http :8080
+#      after_script: stop_any 80 8080
 cache:
   pip: true
   packages: true

@@ -1,0 +1,21 @@
+####
+# ./mvnw -Pnative -Dquarkus.native.container-build=true clean compile quarkus:build
+# ./mvnw -Pfabric8-native docker:build docker:start
+# for id in $(docker ps -q) ; do http :$(docker inspect $id | jq '.[].NetworkSettings.Ports."8080/tcp"[].HostPort' -r) ; done
+# ./mvnw -Pfabric8-native docker:stop docker:remove
+####
+FROM centos:centos7.7.1908
+RUN yum install -y -q sudo java-1.8.0-openjdk \
+ && adduser --create-home --shell /bin/bash --uid 1001 quarkus \
+ && echo "quarkus ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers \
+ && sed -i "s/.*requiretty$/Defaults !requiretty/" /etc/sudoers \
+ && rm -rf /var/cache/apk/* /tmp/*
+EXPOSE 8080
+USER quarkus
+VOLUME /home/quarkus
+WORKDIR /home/quarkus
+ENTRYPOINT ["/bin/bash", "-c"]
+CMD ["\
+chmod +x ./app ; ./app -Dquarkus.http.host=0.0.0.0"]
+COPY --chown=quarkus src/main/resources/templates ./templates/
+COPY --chown=quarkus target/*-runner ./app

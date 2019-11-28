@@ -7,7 +7,6 @@ import io.vertx.reactivex.ext.web.RoutingContext;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
-import java.util.Optional;
 
 @ApplicationScoped
 public class VertxRoutes {
@@ -22,9 +21,9 @@ public class VertxRoutes {
     public void handle(RoutingContext rc) {
         // greetingClient.greeting().subscribe((bufferHttpResponse, throwable) -> {
         //     System.out.println("ololo");
-        //     String message = Optional.ofNullable(throwable)
-        //                              .map(Throwable::getLocalizedMessage)
-        //                              .orElse(bufferHttpResponse.bodyAsString());
+        //     String message = java.util.Optional.ofNullable(throwable)
+        //                                        .map(Throwable::getLocalizedMessage)
+        //                                        .orElse(bufferHttpResponse.bodyAsString());
         //     handelbars.render(rc, "index", "message", message);
         // });
         Consumer<String> view = message -> handelbars.render(rc, "index", "message", message);
