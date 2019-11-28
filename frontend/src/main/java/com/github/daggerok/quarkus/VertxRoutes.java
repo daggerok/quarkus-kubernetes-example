@@ -1,6 +1,7 @@
 package com.github.daggerok.quarkus;
 
 import io.quarkus.vertx.web.Route;
+import io.reactivex.functions.Consumer;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.reactivex.ext.web.RoutingContext;
 
@@ -26,7 +27,7 @@ public class VertxRoutes {
         //                              .orElse(bufferHttpResponse.bodyAsString());
         //     handelbars.render(rc, "index", "message", message);
         // });
-        greetingClient.greeting()
-                      .subscribe(message -> handelbars.render(rc, "index", "message", message));
+        Consumer<String> view = message -> handelbars.render(rc, "index", "message", message);
+        greetingClient.greeting().subscribe(view);
     }
 }

@@ -17,7 +17,7 @@ USER quarkus
 VOLUME /home/quarkus
 WORKDIR /home/quarkus
 ENTRYPOINT ["/bin/ash", "-c"]
-CMD ["\
-java ${JAVA_OPTS} -jar /home/quarkus/app.jar"]
+CMD ["java ${JAVA_OPTS} -jar /home/quarkus/app.jar \
+"]
 COPY --chown=quarkus target/lib/* /home/quarkus/lib/
 COPY --chown=quarkus target/*-runner.jar /home/quarkus/app.jar

@@ -32,6 +32,7 @@ public class GreetingRestClient {
         int port = backendPort.map(Integer::parseInt).orElse(8081);
         WebClientOptions options = new WebClientOptions().setDefaultHost(host)
                                                          .setDefaultPort(port)
+                                                         .setConnectTimeout(3333)
                                                          .setSsl(false);
         client = WebClient.create(vertx, options);
     }

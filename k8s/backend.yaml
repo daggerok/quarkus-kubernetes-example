@@ -25,12 +25,12 @@ spec:
             httpGet:
               scheme: HTTP
               port: 8081
-              path: /
+              path: /health
           livenessProbe:
             httpGet:
               scheme: HTTP
               port: 8081
-              path: /
+              path: /health
       restartPolicy: Always
   selector:
     matchLabels:

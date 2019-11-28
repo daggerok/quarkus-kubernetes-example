@@ -25,12 +25,12 @@ spec:
             httpGet:
               scheme: HTTP
               port: 8080
-              path: /
+              path: /health
           livenessProbe:
             httpGet:
               scheme: HTTP
               port: 8080
-              path: /
+              path: /health
           env:
             - name: BACKEND_HOST
               value: "backend"

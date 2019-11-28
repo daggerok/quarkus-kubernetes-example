@@ -1040,3 +1040,8 @@
 # The size of the worker thread pool.
 #
 #quarkus.vertx.worker-pool-size=20
+
+#
+# The path to the metrics handler.
+#
+#quarkus.smallrye-metrics.path=/metrics

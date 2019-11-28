@@ -15,6 +15,7 @@ USER quarkus
 VOLUME /home/quarkus
 WORKDIR /home/quarkus
 ENTRYPOINT ["/bin/bash", "-c"]
-CMD ["chmod +x ./app ; ./app -Dquarkus.http.host=0.0.0.0"]
+CMD ["\
+chmod +x ./app ; ./app -Dquarkus.http.host=0.0.0.0"]
 COPY --chown=quarkus src/main/resources/templates ./templates/
 COPY --chown=quarkus target/*-runner ./app

@@ -14,6 +14,7 @@ EXPOSE 8081
 USER quarkus
 VOLUME /home/quarkus
 WORKDIR /home/quarkus
-ENTRYPOINT ["/bin/ash", "-c"]
-CMD ["chmod +x ./app && ./app -Dquarkus.http.host=0.0.0.0"]
+ENTRYPOINT ["/bin/bash", "-c"]
+CMD [" \
+chmod +x ./app && ./app -Dquarkus.http.host=0.0.0.0"]
 COPY --chown=quarkus target/*-runner ./app
