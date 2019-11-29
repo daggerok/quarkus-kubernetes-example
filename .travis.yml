@@ -36,7 +36,7 @@ jobs:
         - cd $TRAVIS_BUILD_DIR
         #- wget -q -O - https://raw.githubusercontent.com/rancher/k3d/master/install.sh | bash
         - curl -s https://raw.githubusercontent.com/rancher/k3d/master/install.sh | bash
-        - k3d create --name k3s --api-port 6551 --publish 80:80 --publish 30080:30080 --publish 30081:30081 -w 2 --image rancher/k3s:v0.7.0-rc2
+        - k3d create --name k3s --api-port 6551 --publish 80:80 --publish 30080:30080 --publish 30081:30081 -w 2 --image rancher/k3s:v1.3.4
         #
         - cd $TRAVIS_BUILD_DIR && ./mvnw -Pnative -Dquarkus.native.container-build=true clean compile quarkus:build
         - cd $TRAVIS_BUILD_DIR && ./mvnw -Pfabric8-native docker:stop docker:remove
@@ -60,7 +60,7 @@ jobs:
         - kubectl get pods --all-namespaces -o wide --watch &
         #
         - cd $TRAVIS_BUILD_DIR && kubectl apply -f k8s/ -f k8s/ingress/traefik.yaml
-        - sleep 75s
+        - sleep 95s
         #
         - kubectl get all
         - http :/
@@ -79,7 +79,7 @@ jobs:
         - cd $TRAVIS_BUILD_DIR
         #- wget -q -O - https://raw.githubusercontent.com/rancher/k3d/master/install.sh | bash
         - curl -s https://raw.githubusercontent.com/rancher/k3d/master/install.sh | bash
-        - k3d create --name k3s --api-port 6551 --publish 80:80 --publish 30080:30080 --publish 30081:30081 --workers 3 2 --image rancher/k3s:v0.7.0-rc2
+        - k3d create --name k3s --api-port 6551 --publish 80:80 --publish 30080:30080 --publish 30081:30081 --workers 3 2 --image rancher/k3s:v1.3.4
         #
         - cd $TRAVIS_BUILD_DIR && ./mvnw -Pfabric8-jvm docker:stop docker:remove
         - cd $TRAVIS_BUILD_DIR && ./mvnw -Pfabric8-native docker:stop docker:remove
@@ -102,7 +102,7 @@ jobs:
         - kubectl get pods --all-namespaces -o wide --watch &
         #
         - cd $TRAVIS_BUILD_DIR && kubectl apply -f k8s/ -f k8s/ingress/traefik.yaml
-        - sleep 84s
+        - sleep 94s
         #
         - kubectl get all
         - http :/
