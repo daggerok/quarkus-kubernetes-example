@@ -42,7 +42,7 @@ jobs:
         - cd $TRAVIS_BUILD_DIR && ./mvnw -Pfabric8-native docker:stop docker:remove
         - cd $TRAVIS_BUILD_DIR && ./mvnw -Pfabric8-jvm docker:stop docker:remove
         - cd $TRAVIS_BUILD_DIR && ./mvnw -Pfabric8-native docker:build
-        - k3d i --name k3s daggerok/quarkus-kubernetes-example-frontend,daggerok/quarkus-kubernetes-example-backend
+        - k3d i --name k3s daggerok/quarkus-kubernetes-example-frontend,daggerok/quarkus-kubernetes-example-backend || echo 'oops....'
         #
         - export KUBECONFIG="$(k3d get-kubeconfig --name='k3s')"
         - |
@@ -84,7 +84,7 @@ jobs:
         - cd $TRAVIS_BUILD_DIR && ./mvnw -Pfabric8-jvm docker:stop docker:remove
         - cd $TRAVIS_BUILD_DIR && ./mvnw -Pfabric8-native docker:stop docker:remove
         - cd $TRAVIS_BUILD_DIR && ./mvnw -Pfabric8-jvm clean compile quarkus:build docker:build
-        - k3d import-images --name k3s daggerok/quarkus-kubernetes-example-frontend,daggerok/quarkus-kubernetes-example-backend
+        - k3d import-images --name k3s daggerok/quarkus-kubernetes-example-frontend,daggerok/quarkus-kubernetes-example-backend || echo 'oops....'
         #
         - export KUBECONFIG="$(k3d get-kubeconfig --name='k3s')"
         - |
