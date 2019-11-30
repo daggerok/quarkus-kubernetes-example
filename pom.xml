@@ -15,21 +15,24 @@
   <properties>
     <port>8080</port><!-- change me in sub modules! -->
     <compiler-plugin.version>3.8.1</compiler-plugin.version>
-    <docker-maven-plugin.version>0.31.0</docker-maven-plugin.version>
-    <encoding>UTF-8</encoding>
     <failsafe-plugin.version>2.22.2</failsafe-plugin.version>
+    <surefire-plugin.version>2.22.1</surefire-plugin.version>
+    <docker-maven-plugin.version>0.31.0</docker-maven-plugin.version>
     <java.version>1.8</java.version>
     <maven.compiler.parameters>true</maven.compiler.parameters>
     <maven.compiler.source>${java.version}</maven.compiler.source>
     <maven.compiler.target>${java.version}</maven.compiler.target>
+    <encoding>UTF-8</encoding>
     <project.build.sourceEncoding>${encoding}</project.build.sourceEncoding>
     <project.reporting.outputEncoding>${encoding}</project.reporting.outputEncoding>
-    <quarkus-plugin.version>${quarkus.version}</quarkus-plugin.version>
-    <quarkus.platform.artifact-id>quarkus-universe-bom</quarkus.platform.artifact-id>
+    <lombok.version>1.18.10</lombok.version>
+    <logback.version>1.2.3</logback.version>
+    <quarkus.version>1.0.1.Final</quarkus.version>
     <quarkus.platform.group-id>io.quarkus</quarkus.platform.group-id>
+    <quarkus-plugin.version>${quarkus.version}</quarkus-plugin.version>
     <quarkus.platform.version>${quarkus.version}</quarkus.platform.version>
-    <quarkus.version>1.0.0.Final</quarkus.version>
-    <surefire-plugin.version>2.22.1</surefire-plugin.version>
+    <quarkus.platform.artifact-id>quarkus-universe-bom</quarkus.platform.artifact-id>
+    <!--<quarkus.native.builder-image>quay.io/quarkus/ubi-quarkus-native-image:19.3.0-java11</quarkus.native.builder-image>-->
   </properties>
   <dependencyManagement>
     <dependencies>
@@ -37,12 +40,24 @@
         <groupId>${quarkus.platform.group-id}</groupId>
         <artifactId>${quarkus.platform.artifact-id}</artifactId>
         <version>${quarkus.platform.version}</version>
-        <type>pom</type>
         <scope>import</scope>
+        <type>pom</type>
       </dependency>
     </dependencies>
   </dependencyManagement>
   <dependencies>
+    <dependency>
+      <groupId>org.projectlombok</groupId>
+      <artifactId>lombok</artifactId>
+      <version>${lombok.version}</version>
+      <optional>true</optional>
+      <scope>provided</scope>
+    </dependency>
+    <!--<dependency>
+      <groupId>ch.qos.logback</groupId>
+      <artifactId>logback-classic</artifactId>
+      <version>${logback.version}</version>
+    </dependency>-->
     <dependency>
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-junit5</artifactId>
@@ -58,10 +73,22 @@
     <defaultGoal>clean package</defaultGoal>
     <plugins>
       <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
         <version>${compiler-plugin.version}</version>
       </plugin>
       <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-failsafe-plugin</artifactId>
+        <version>${failsafe-plugin.version}</version>
+        <configuration>
+          <systemProperties>
+            <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
+          </systemProperties>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
         <version>${surefire-plugin.version}</version>
         <configuration>
@@ -116,6 +143,24 @@
     </plugins>
   </build>
   <profiles>
+    <!--<profile>
+      <id>jdk9+</id>
+      <activation>
+        <jdk>[9,)</jdk>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <version>${compiler-plugin.version}</version>
+            <configuration>
+              <release>${java.version}</release>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>-->
     <profile>
       <id>native</id>
       <activation>

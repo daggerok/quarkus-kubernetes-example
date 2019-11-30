@@ -100,6 +100,8 @@ k3d stop --name=k3s -a ; rm -rf ~/.config/k3d/k3s ; docker rm -fv `docker ps -aq
 * build and push docker images by using fabric8 docker-maven-plugin
 * correct docker container CMD and ENTRYPOINT usage
 * application is running in docker with qaurkus user
+* k3d / k3s k8s CI / local testing
+* k3d / k3s import-images from local docker [k3d import-images feature introduced by PR #83, works with rancher/k3s tag of v0.7.0-rc2 or later due to a hard requirement on ctr inside the k3s](https://github.com/rancher/k3d/releases/tag/v1.3.0-dev.0)
 
 ## resources
 

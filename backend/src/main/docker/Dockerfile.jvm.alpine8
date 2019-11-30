@@ -3,23 +3,23 @@
 # for id in $(docker ps -q) ; do http :$(docker inspect $id | jq '.[].NetworkSettings.Ports."8080/tcp"[].HostPort' -r) ; done
 # ./mvnw -Pfabric8-jvm docker:stop docker:remove
 ####
-FROM openjdk:8u232-jre-slim-buster
+FROM openjdk:8u212-jre-alpine3.9
 LABEL MAINTAINER="Maksim Kostromin https://github.com/daggerok/"
 ENV JAVA_OPTS="-Dquarkus.http.host=0.0.0.0 -Djava.util.logging.manager=org.jboss.logmanager.LogManager"
-USER root
-RUN apt update -yqq \
- && apt install sudo \
- && addgroup --system --gid 1001 quarkus \
- && adduser --system --home /home/quarkus --shell /sbin/bash --uid 1001 --ingroup quarkus --disabled-password --disabled-login quarkus \
+RUN apk --no-cache --update add busybox-suid openssh-client shadow sudo curl \
+ && addgroup -g 1001 -S quarkus \
+ && adduser -h /home/quarkus -s /bin/ash -u 1001 -S quarkus -G quarkus \
  && echo "quarkus ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers \
  && sed -i "s/.*requiretty$/Defaults !requiretty/" /etc/sudoers \
- && rm -rf /tmp/*
-EXPOSE 8080
+ && apk del busybox-suid openssh-client shadow \
+ && rm -rf /var/cache/apk/* /tmp/*
+EXPOSE 8081
 USER quarkus
+VOLUME /home/quarkus
 WORKDIR /home/quarkus
-ENTRYPOINT ["/bin/bash", "-c"]
-CMD [" \
-        java ${JAVA_OPTS} -jar ./app.jar \
-     "]
+ENTRYPOINT ["/bin/ash", "-c"]
+CMD ["\
+java ${JAVA_OPTS} -jar /home/quarkus/app.jar \
+"]
 COPY --chown=quarkus target/lib/* /home/quarkus/lib/
 COPY --chown=quarkus target/*-runner.jar /home/quarkus/app.jar

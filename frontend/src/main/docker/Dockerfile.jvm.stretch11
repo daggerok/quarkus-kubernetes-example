@@ -3,14 +3,13 @@
 # for id in $(docker ps -q) ; do http :$(docker inspect $id | jq '.[].NetworkSettings.Ports."8080/tcp"[].HostPort' -r) ; done
 # ./mvnw -Pfabric8-jvm docker:stop docker:remove
 ####
-FROM openjdk:8u232-jre-slim-buster
+FROM openjdk:11.0.5-jre-stretch
 LABEL MAINTAINER="Maksim Kostromin https://github.com/daggerok/"
 ENV JAVA_OPTS="-Dquarkus.http.host=0.0.0.0 -Djava.util.logging.manager=org.jboss.logmanager.LogManager"
-USER root
+# adduser --disabled-login --disabled-password --home /home/quarkus --shell /sbin/bash --uid 1001 quarkus
 RUN apt update -yqq \
  && apt install sudo \
- && addgroup --system --gid 1001 quarkus \
- && adduser --system --home /home/quarkus --shell /sbin/bash --uid 1001 --ingroup quarkus --disabled-password --disabled-login quarkus \
+ && adduser --home /home/quarkus --shell /sbin/bash --uid 1001 quarkus \
  && echo "quarkus ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers \
  && sed -i "s/.*requiretty$/Defaults !requiretty/" /etc/sudoers \
  && rm -rf /tmp/*
@@ -18,8 +17,6 @@ EXPOSE 8080
 USER quarkus
 WORKDIR /home/quarkus
 ENTRYPOINT ["/bin/bash", "-c"]
-CMD [" \
-        java ${JAVA_OPTS} -jar ./app.jar \
-     "]
-COPY --chown=quarkus target/lib/* /home/quarkus/lib/
-COPY --chown=quarkus target/*-runner.jar /home/quarkus/app.jar
+CMD ["java ${JAVA_OPTS} -jar ./*.jar"]
+COPY target/lib/* ./lib/
+COPY target/*-runner.jar ./app.jar

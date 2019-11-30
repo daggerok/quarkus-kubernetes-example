@@ -3,7 +3,7 @@
 # for id in $(docker ps -q) ; do http :$(docker inspect $id | jq '.[].NetworkSettings.Ports."8080/tcp"[].HostPort' -r) ; done
 # ./mvnw -Pfabric8-jvm docker:stop docker:remove
 ####
-FROM openjdk:8u232-jre-slim-buster
+FROM openjdk:11.0.5-jre-slim-buster
 LABEL MAINTAINER="Maksim Kostromin https://github.com/daggerok/"
 ENV JAVA_OPTS="-Dquarkus.http.host=0.0.0.0 -Djava.util.logging.manager=org.jboss.logmanager.LogManager"
 USER root
@@ -14,12 +14,12 @@ RUN apt update -yqq \
  && echo "quarkus ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers \
  && sed -i "s/.*requiretty$/Defaults !requiretty/" /etc/sudoers \
  && rm -rf /tmp/*
-EXPOSE 8080
+EXPOSE 8081
 USER quarkus
 WORKDIR /home/quarkus
 ENTRYPOINT ["/bin/bash", "-c"]
 CMD [" \
-        java ${JAVA_OPTS} -jar ./app.jar \
+        java ${JAVA_OPTS} -jar /home/quarkus/app.jar \
      "]
 COPY --chown=quarkus target/lib/* /home/quarkus/lib/
 COPY --chown=quarkus target/*-runner.jar /home/quarkus/app.jar
