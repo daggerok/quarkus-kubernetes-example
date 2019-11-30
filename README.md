@@ -105,6 +105,7 @@ k3d stop --name=k3s -a ; rm -rf ~/.config/k3d/k3s ; docker rm -fv `docker ps -aq
 
 ## resources
 
+* [Quarkus UI Web development](https://github.com/kabir/blog-quarkus-ui-development)
 * [vertx web examples](https://github.com/vert-x3/vertx-examples/tree/master/web-examples)
 * [vertx templates](https://vertx.io/docs/vertx-web/java/#_templates)
 * [vertx web](https://vertx.io/docs/vertx-web/java/)
